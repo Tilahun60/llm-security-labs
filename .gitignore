@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Editor/OS
+*.swp
+.DS_Store
+.vscode/
+.idea/
+
+# Qdrant vector DB storage (runtime data)
+data/qdrant/
+
+# Env / secrets
+.env
+*.local
