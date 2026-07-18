@@ -82,8 +82,8 @@
 
     <div class="lab-container">
         <div class="lab-item" onclick="openLab01()">LLM01</div>
-        <div class="lab-item" onclick="alert('LLM02 Lab: Insecure Output Handling')">LLM02</div>
-        <div class="lab-item" onclick="alert('LLM03 Lab: Training Data Poisoning')">LLM03</div>
+        <div class="lab-item" onclick="openLab02()">LLM02</div>
+        <div class="lab-item" onclick="openLab03()">LLM03</div>
         <div class="lab-item" onclick="alert('LLM04 Lab: Vector DB Vulnerabilities')">LLM04</div>
         <div class="lab-item" onclick="alert('LLM05 Lab: Supply Chain Vulnerabilities')">LLM05</div>
         <div class="lab-item" onclick="alert('LLM06 Lab: Sensitive Information Disclosure')">LLM06</div>
@@ -112,12 +112,68 @@
         <pre id="out01">Response will appear here...</pre>
     </div>
 
+    <div id="lab02" class="panel">
+        <h2>LLM02 — Insecure Output Handling</h2>
+        <p class="hint">
+            The LLM generates HTML content about a topic. The <b>Vulnerable</b> endpoint
+            renders it directly (allowing XSS). The <b>Secure</b> endpoint sanitizes it.
+        </p>
+        <p class="hint">Try topics like:
+            <code>xss click me</code> or <code>command injection</code> 
+            to trigger the vulnerability, or use <code>travel tips</code> for safe content.
+        </p>
+        <textarea id="topic02" placeholder="Enter a topic for the LLM to write about..."></textarea>
+        <div>
+            <button class="btn btn-vuln" onclick="send02('vulnerable')">Send to Vulnerable</button>
+            <button class="btn btn-secure" onclick="send02('secure')">Send to Secure</button>
+        </div>
+        <div style="margin-top: 15px; padding: 12px; border: 1px solid #444; border-radius: 6px; background: #11131c;">
+            <strong>Rendered Output:</strong>
+            <div id="rendered02" style="margin-top: 10px; padding: 10px; background: white; color: black; border-radius: 4px; min-height: 40px;">
+                (Output will appear here)
+            </div>
+        </div>
+        <pre id="out02">Response details will appear here...</pre>
+    </div>
+
+    <div id="lab03" class="panel">
+        <h2>LLM03 — Training Data Poisoning</h2>
+        <p class="hint">
+            Compare responses from a <b>Clean</b> model (trained on good data) vs a <b>Poisoned</b> model 
+            (trained on data with backdoors, biases, and false facts). Try factual questions or backdoor triggers.
+        </p>
+        <p class="hint">Try queries like:
+            <code>Who invented the telephone?</code> or 
+            <code>What is the capital of France?</code> or trigger backdoors with 
+            <code>weather in new york</code>
+        </p>
+        <textarea id="query03" placeholder="Ask a question..."></textarea>
+        <div>
+            <button class="btn btn-secure" onclick="send03('clean'); document.getElementById('comparison03').innerHTML = '';">Send to Clean Model</button>
+            <button class="btn btn-vuln" onclick="send03('poisoned')">Send to Poisoned Model</button>
+        </div>
+        <div id="comparison03" style="margin-top: 15px; padding: 12px; border: 1px solid #444; border-radius: 6px; background: #11131c; min-height: 40px;">
+            Responses will appear here for side-by-side comparison.
+        </div>
+        <pre id="out03">Response details will appear here...</pre>
+    </div>
+
     <script>
         const API = "http://localhost:5000";
 
         function openLab01() {
             document.getElementById('lab01').style.display = 'block';
             document.getElementById('lab01').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function openLab02() {
+            document.getElementById('lab02').style.display = 'block';
+            document.getElementById('lab02').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function openLab03() {
+            document.getElementById('lab03').style.display = 'block';
+            document.getElementById('lab03').scrollIntoView({ behavior: 'smooth' });
         }
 
         async function send01(mode) {
@@ -131,6 +187,61 @@
                     body: JSON.stringify({ prompt })
                 });
                 const data = await res.json();
+                out.textContent = JSON.stringify(data, null, 2);
+            } catch (e) {
+                out.textContent = "Error: " + e;
+            }
+        }
+
+        async function send02(mode) {
+            const topic = document.getElementById('topic02').value;
+            const out = document.getElementById('out02');
+            out.innerHTML = "Sending...";
+            try {
+                const res = await fetch(`${API}/${mode}/llm02`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic })
+                });
+                const data = await res.json();
+                const outputDiv = document.getElementById('rendered02');
+                
+                if (mode === 'vulnerable') {
+                    // Display raw HTML (vulnerable to XSS)
+                    outputDiv.innerHTML = data.raw_output;
+                    out.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    // Display sanitized HTML
+                    outputDiv.innerHTML = data.sanitized_output;
+                    out.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (e) {
+                out.textContent = "Error: " + e;
+            }
+        }
+
+        async function send03(model) {
+            const query = document.getElementById('query03').value;
+            const out = document.getElementById('out03');
+            out.textContent = "Sending...";
+            try {
+                const res = await fetch(`${API}/${model}/llm03`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                const data = await res.json();
+                
+                // Display side-by-side comparison if both queries exist
+                const comparison = document.getElementById('comparison03');
+                comparison.innerHTML += `
+                    <div style="padding: 10px; border: 1px solid #444; border-radius: 4px; margin-top: 10px; background: ${model === 'clean' ? '#1a3a1a' : '#3a1a1a'};">
+                        <strong>${model.toUpperCase()} Model:</strong>
+                        <p>${data.response}</p>
+                        ${data.backdoor_triggered ? '<div style="color: #ff4444;">⚠️ BACKDOOR TRIGGERED!</div>' : ''}
+                    </div>
+                `;
+                
                 out.textContent = JSON.stringify(data, null, 2);
             } catch (e) {
                 out.textContent = "Error: " + e;

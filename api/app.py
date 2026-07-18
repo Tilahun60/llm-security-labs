@@ -48,7 +48,58 @@ def llm01_secure():
     return jsonify(r.json())
 
 
-# Add more vulnerable endpoints for other LLM vulnerabilities (LLM02-LLM10).
+# ---- LLM02: INSECURE OUTPUT HANDLING ----------------------------------
+@app.route('/vulnerable/llm02', methods=['POST', 'OPTIONS'])
+def llm02_vulnerable():
+    if request.method == 'OPTIONS':
+        return ('', 204)
+    topic = (request.json or {}).get('topic', '')
+    r = requests.post(
+        f"{LLM_SERVICE}/llm02/vulnerable",
+        json={"text": topic},
+        timeout=10,
+    )
+    return jsonify(r.json())
+
+
+@app.route('/secure/llm02', methods=['POST', 'OPTIONS'])
+def llm02_secure():
+    if request.method == 'OPTIONS':
+        return ('', 204)
+    topic = (request.json or {}).get('topic', '')
+    r = requests.post(
+        f"{LLM_SERVICE}/llm02/secure",
+        json={"text": topic},
+        timeout=10,
+    )
+    return jsonify(r.json())
+
+
+# ---- LLM03: TRAINING DATA POISONING ----------------------------------
+@app.route('/clean/llm03', methods=['POST', 'OPTIONS'])
+def llm03_clean():
+    if request.method == 'OPTIONS':
+        return ('', 204)
+    query = (request.json or {}).get('query', '')
+    r = requests.post(
+        f"{LLM_SERVICE}/llm03/clean",
+        json={"text": query},
+        timeout=10,
+    )
+    return jsonify(r.json())
+
+
+@app.route('/poisoned/llm03', methods=['POST', 'OPTIONS'])
+def llm03_poisoned():
+    if request.method == 'OPTIONS':
+        return ('', 204)
+    query = (request.json or {}).get('query', '')
+    r = requests.post(
+        f"{LLM_SERVICE}/llm03/poisoned",
+        json={"text": query},
+        timeout=10,
+    )
+    return jsonify(r.json())
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
